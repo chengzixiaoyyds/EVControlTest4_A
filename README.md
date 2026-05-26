@@ -50,13 +50,20 @@ a_{fwd} \cdot (PWM - N)^2, & PWM > N + \Delta \\
 
 ### 2. 推力分配与 PWM 输出
 
-| 通道 | 目标量 | 定时器 | 引脚 |
-|------|------|:---:|------|
-| Motor Y | Y 轴推力 (N) | TIM2 CH1/CH2 | PA0/PA1 |
-| Motor X | X 轴推力 (N) | TIM2 CH3/CH4 | PA2/PA3 |
-| Motor Z | Z 轴推力 (N) | TIM3 CH4/CH3 | PB1/PB0 |
-| Motor Yaw | Yaw 扭矩 (N·m) | TIM3 CH2/CH1 | PA7/PA6 |
-| 舵机 | 机械臂角度 | TIM1 CH3 | PA10 |
+DRV8871 每个电机使用 2 路 PWM 互补控制：
+
+| 电机 | 目标量 | DRV8871 IN1 | DRV8871 IN2 | 物理引脚 | 正转时 | 反转时 |
+|------|------|:---:|:---:|------|:---:|:---:|
+| Motor Y | Y 轴推力 | TIM2 **CH1** | TIM2 **CH2** | PA0 / PA1 | IN1=HIGH, IN2=PWM | IN1=PWM, IN2=HIGH |
+| Motor X | X 轴推力 | TIM2 **CH3** | TIM2 **CH4** | PA2 / PA3 | IN1=HIGH, IN2=PWM | IN1=PWM, IN2=HIGH |
+| Motor Z | Z 轴推力 | TIM3 **CH4** | TIM3 **CH3** | PB1 / PB0 | IN1=HIGH, IN2=PWM | IN1=PWM, IN2=HIGH |
+| Motor Yaw | Yaw 扭矩 | TIM3 **CH2** | TIM3 **CH1** | PA7 / PA6 | IN1=HIGH, IN2=PWM | IN1=PWM, IN2=HIGH |
+| 舵机 | 机械臂角度 | — | TIM1 **CH3** | PA10 | — | — |
+
+> DRV8871 控制逻辑：`DRV8871_SetSpeed(speed)` 中
+> - `speed > 0`：IN1 恒高，IN2 输出 PWM（占空比 = speed/PWM_PERIOD），电机**正转**
+> - `speed < 0`：IN2 恒高，IN1 输出 PWM（占空比 = |speed|/PWM_PERIOD），电机**反转**
+> - `speed = 0`：IN1/IN2 均恒高，电机**刹车**
 
 - PWM 频率：10kHz（TIM2/TIM3, PSC=9-1, ARR=800-1）
 - 舵机频率：50Hz（TIM1, PSC=720-1, ARR=2000-1）
@@ -163,15 +170,29 @@ Test4_A/
 
 ### 3. 硬件连接
 
-| 外设 | STM32 引脚 | 说明 |
-|------|-----------|------|
+**通信 & 传感器**
+
+| 外设 | 引脚 | 说明 |
+|------|------|------|
 | USART3 TX | PB10 | 连接上位机 RX |
 | USART3 RX | PB11 | 连接上位机 TX |
 | I²C1 SCL | PB8 | INA226 |
 | I²C1 SDA | PB9 | INA226 |
-| TIM2 CH1~4 | PA0~PA3 | DRV8871 Motor Y/X |
-| TIM3 CH1~4 | PA6/PA7/PB0/PB1 | DRV8871 Motor Yaw/Z |
-| TIM1 CH3 | PA10 | 舵机信号线 |
+
+**推进器电机**
+
+| 外设 | IN1 引脚 | IN2 引脚 | 定时器通道 | 说明 |
+|------|:---:|:---:|------|------|
+| DRV8871 Motor Y   | PA0 | PA1 | TIM2 CH1 / CH2 | Y 轴推进器 |
+| DRV8871 Motor X   | PA2 | PA3 | TIM2 CH3 / CH4 | X 轴推进器 |
+| DRV8871 Motor Z   | PB1 | PB0 | TIM3 CH4 / CH3 | Z 轴推进器 |
+| DRV8871 Motor Yaw | PA7 | PA6 | TIM3 CH2 / CH1 | Yaw 推进器 |
+
+**舵机**
+
+| 外设 | 信号引脚 | 定时器通道 | 说明 |
+|------|:---:|------|------|
+| 机械臂舵机 | PA10 | TIM1 CH3 | 50Hz, 0.5~2.5ms 脉冲 |
 
 ### 4. 通信测试
 
