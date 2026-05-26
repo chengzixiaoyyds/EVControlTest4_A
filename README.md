@@ -58,8 +58,8 @@ a_{fwd} \cdot (PWM - N)^2, & PWM > N + \Delta \\
 | Motor Yaw | Yaw 扭矩 (N·m) | TIM3 CH2/CH1 | PA7/PA6 |
 | 舵机 | 机械臂角度 | TIM1 CH3 | PA10 |
 
-- PWM 频率：10kHz（TIM2/TIM3, PSC=8, ARR=799）
-- 舵机频率：50Hz（TIM1, PSC=720-1, ARR=1999）
+- PWM 频率：10kHz（TIM2/TIM3, PSC=9-1, ARR=800-1）
+- 舵机频率：50Hz（TIM1, PSC=720-1, ARR=2000-1）
 - 角度映射：`CCR = 50 + angle/256 × 200`（0.5ms~2.5ms 脉冲）
 
 ### 3. 通信协议
