@@ -75,9 +75,9 @@ DRV8871 每个电机使用 2 路 PWM 互补控制：
 | 舵机 | 机械臂角度 | — | TIM1 **CH3** | PA10 | — | — |
 
 > DRV8871 控制逻辑：`DRV8871_SetSpeed(speed)` 中
-> - `speed > 0`：IN1 恒高，IN2 输出 PWM（占空比 = speed/PWM_PERIOD），电机**正转**
-> - `speed < 0`：IN2 恒高，IN1 输出 PWM（占空比 = |speed|/PWM_PERIOD），电机**反转**
-> - `speed = 0`：IN1/IN2 均恒高，电机**刹车**
+> - `speed > 0`：IN1 恒高（CCR=PERIOD），IN2 输出 PWM（CCR = PERIOD - speed），电机**正转**
+> - `speed < 0`：IN1 输出 PWM（CCR = PERIOD - |speed|），IN2 恒高（CCR=PERIOD），电机**反转**
+> - `speed = 0`：IN1/IN2 均恒高（CCR=PERIOD），电机**刹车**
 
 - PWM 频率：10kHz（TIM2/TIM3, PSC=9-1, ARR=800-1）
 - 舵机频率：50Hz（TIM1, PSC=720-1, ARR=2000-1）
