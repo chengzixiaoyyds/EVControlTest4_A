@@ -50,14 +50,28 @@ a_{fwd} \cdot (PWM - N)^2, & PWM > N + \Delta \\
 
 ### 2. 推力分配与 PWM 输出
 
+四个推进器的空间布局与推力分配逻辑：
+
+| 电机 | 位置 | 功能 | 分配公式 |
+|------|:---:|------|------|
+| **Motor A** | 左 | Y 轴前进 + Yaw 轴偏航差动（正方向向前） | $F_A = \frac{F_y}{2} - F_{yaw}$ |
+| **Motor B** | 右 | Y 轴前进 + Yaw 轴偏航差动（正方向向前） | $F_B = \frac{F_y}{2} + F_{yaw}$ |
+| **Motor C** | 前 | Z 轴升降（正方向向下） | $F_C = \frac{F_z}{2}$ |
+| **Motor D** | 后 | Z 轴升降（正方向向下） | $F_D = \frac{F_z}{2}$ |
+
+> **偏航力臂**：100mm（0.1m）。偏航通道接收的是**扭矩**（N·m），需先换算为力：
+> $$F_{yaw} = \frac{\tau_{yaw}}{0.1\ \text{m}}$$
+>
+> X 轴推力预留，从串口接收但不参与电机分配。
+
 DRV8871 每个电机使用 2 路 PWM 互补控制：
 
 | 电机 | 目标量 | DRV8871 IN1 | DRV8871 IN2 | 物理引脚 | 正转时 | 反转时 |
 |------|------|:---:|:---:|------|:---:|:---:|
-| Motor Y | Y 轴推力 | TIM2 **CH1** | TIM2 **CH2** | PA0 / PA1 | IN1=HIGH, IN2=PWM | IN1=PWM, IN2=HIGH |
-| Motor X | X 轴推力 | TIM2 **CH3** | TIM2 **CH4** | PA2 / PA3 | IN1=HIGH, IN2=PWM | IN1=PWM, IN2=HIGH |
-| Motor Z | Z 轴推力 | TIM3 **CH4** | TIM3 **CH3** | PB1 / PB0 | IN1=HIGH, IN2=PWM | IN1=PWM, IN2=HIGH |
-| Motor Yaw | Yaw 扭矩 | TIM3 **CH2** | TIM3 **CH1** | PA7 / PA6 | IN1=HIGH, IN2=PWM | IN1=PWM, IN2=HIGH |
+| Motor A | Y + Yaw | TIM2 **CH1** | TIM2 **CH2** | PA0 / PA1 | IN1=HIGH, IN2=PWM | IN1=PWM, IN2=HIGH |
+| Motor B | Y + Yaw | TIM2 **CH3** | TIM2 **CH4** | PA2 / PA3 | IN1=HIGH, IN2=PWM | IN1=PWM, IN2=HIGH |
+| Motor C | Z | TIM3 **CH4** | TIM3 **CH3** | PB1 / PB0 | IN1=HIGH, IN2=PWM | IN1=PWM, IN2=HIGH |
+| Motor D | Z | TIM3 **CH2** | TIM3 **CH1** | PA7 / PA6 | IN1=HIGH, IN2=PWM | IN1=PWM, IN2=HIGH |
 | 舵机 | 机械臂角度 | — | TIM1 **CH3** | PA10 | — | — |
 
 > DRV8871 控制逻辑：`DRV8871_SetSpeed(speed)` 中
@@ -183,10 +197,10 @@ Test4_A/
 
 | 外设 | IN1 引脚 | IN2 引脚 | 定时器通道 | 说明 |
 |------|:---:|:---:|------|------|
-| DRV8871 Motor Y   | PA0 | PA1 | TIM2 CH1 / CH2 | Y 轴推进器 |
-| DRV8871 Motor X   | PA2 | PA3 | TIM2 CH3 / CH4 | X 轴推进器 |
-| DRV8871 Motor Z   | PB1 | PB0 | TIM3 CH4 / CH3 | Z 轴推进器 |
-| DRV8871 Motor Yaw | PA7 | PA6 | TIM3 CH2 / CH1 | Yaw 推进器 |
+| DRV8871 Motor A | PA0 | PA1 | TIM2 CH1 / CH2 | Y 轴推进 + Yaw 轴偏航差动（左侧） |
+| DRV8871 Motor B | PA2 | PA3 | TIM2 CH3 / CH4 | Y 轴推进 + Yaw 轴偏航差动（右侧） |
+| DRV8871 Motor C | PB1 | PB0 | TIM3 CH4 / CH3 | Z 轴推进器（前，正向下） |
+| DRV8871 Motor D | PA7 | PA6 | TIM3 CH2 / CH1 | Z 轴推进器（后，正向下） |
 
 **舵机**
 
@@ -229,4 +243,5 @@ FA AF 49  00 00 20 41  00 00 00 00  00 00 00 00  00 00 00 00  80  0B  FB BF
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| v1.1 | 2026-05 | 重新分配推力：A(左)/B(右) Y轴前进+Yaw轴偏航差动(力臂0.1m)，C(前)/D(后) Z轴升降(正向下)，X轴预留 |
 | v1.0 | 2026-05 | 初始版本，完成推力曲线拟合、4 路推进器控制、通信协议、电流监测 |

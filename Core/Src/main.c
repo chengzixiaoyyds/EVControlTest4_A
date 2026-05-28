@@ -64,17 +64,14 @@ uint8_t uart3_rx_buffer;
 SerialState serial_state;
 uint8_t command_type;
 float y_thrust, x_thrust, z_thrust, yaw_thrust;
-float y_pwm, x_pwm, z_pwm, yaw_pwm;
+float A_pwm, B_pwm, C_pwm, D_pwm;
 uint8_t calculated_checksum;
 uint8_t angle;
 uint8_t data_buf[17];
 uint8_t data_read_index = 0;
 uint8_t transmit_buffer[15];
 uint16_t sg1_pwm;
-DRV8871_HandleTypeDef motory;
-DRV8871_HandleTypeDef motorx;
-DRV8871_HandleTypeDef motorz;
-DRV8871_HandleTypeDef motoryaw;
+DRV8871_HandleTypeDef motorA, motorB, motorC, motorD;
 float current;
 /* USER CODE END PV */
 
@@ -178,14 +175,23 @@ void Process_Serial_Data(uint8_t rx_data)
           memcpy(&z_thrust,  &data_buf[8],  4);
           memcpy(&yaw_thrust, &data_buf[12], 4);
           angle = data_buf[16];
-          y_pwm = 8 * PWM_FromThrust(y_thrust);
-          x_pwm = 8 * PWM_FromThrust(x_thrust);
-          z_pwm = 8 * PWM_FromThrust(z_thrust);
-          yaw_pwm = 8 * PWM_FromThrust(yaw_thrust);
-          DRV8871_SetSpeed(&motory, y_pwm);
-          DRV8871_SetSpeed(&motorx, x_pwm);
-          DRV8871_SetSpeed(&motorz, z_pwm);
-          DRV8871_SetSpeed(&motoryaw, yaw_pwm);
+          // A左 B右 提供Y轴前进力(正方向向前) + Yaw轴偏航差动(力臂100mm)
+          // C前 D后 提供Z轴升降力(正方向向下)
+          // X轴预留，不参与分配
+          // yaw_thrust为扭矩(N·m)，除以力臂0.1m换算为单侧差动力(N)
+          float yaw_force = yaw_thrust / 0.1f;
+          float motorAF = y_thrust / 2.0f - yaw_force;
+          float motorBF = y_thrust / 2.0f + yaw_force;
+          float motorCF = z_thrust / 2.0f;
+          float motorDF = z_thrust / 2.0f;
+          A_pwm = 8 * PWM_FromThrust(motorAF);
+          B_pwm = 8 * PWM_FromThrust(motorBF);
+          C_pwm = 8 * PWM_FromThrust(motorCF);
+          D_pwm = 8 * PWM_FromThrust(motorDF);
+          DRV8871_SetSpeed(&motorA, A_pwm);
+          DRV8871_SetSpeed(&motorB, B_pwm);
+          DRV8871_SetSpeed(&motorC, C_pwm);
+          DRV8871_SetSpeed(&motorD, D_pwm);
           sg1_pwm = (uint16_t)(50.0f + angle / 256.0f * 200.0f + 0.5f);  // 四舍五入
           __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, sg1_pwm);
         }
@@ -256,14 +262,14 @@ int main(void)
   transmit_buffer[7] = 0;
   transmit_buffer[13] = TAIL_BYTE1;
   transmit_buffer[14] = TAIL_BYTE2;
-  DRV8871_Init(&motory, &htim2, TIM_CHANNEL_1, TIM_CHANNEL_2);
-  DRV8871_Init(&motorx, &htim2, TIM_CHANNEL_3, TIM_CHANNEL_4);
-  DRV8871_Init(&motorz, &htim3, TIM_CHANNEL_4, TIM_CHANNEL_3);
-  DRV8871_Init(&motoryaw, &htim3, TIM_CHANNEL_2, TIM_CHANNEL_1);
-  DRV8871_Start(&motory);
-  DRV8871_Start(&motorx);
-  DRV8871_Start(&motorz);
-  DRV8871_Start(&motoryaw);
+  DRV8871_Init(&motorA, &htim2, TIM_CHANNEL_1, TIM_CHANNEL_2);
+  DRV8871_Init(&motorB, &htim2, TIM_CHANNEL_3, TIM_CHANNEL_4);
+  DRV8871_Init(&motorC, &htim3, TIM_CHANNEL_4, TIM_CHANNEL_3);
+  DRV8871_Init(&motorD, &htim3, TIM_CHANNEL_2, TIM_CHANNEL_1);
+  DRV8871_Start(&motorA);
+  DRV8871_Start(&motorB);
+  DRV8871_Start(&motorC);
+  DRV8871_Start(&motorD);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
   HAL_UART_Receive_IT(&huart3, &uart3_rx_buffer, 1);
   /* USER CODE END 2 */
