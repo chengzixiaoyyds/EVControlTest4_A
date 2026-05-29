@@ -176,12 +176,12 @@ void Process_Serial_Data(uint8_t rx_data)
           memcpy(&yaw_thrust, &data_buf[12], 4);
           angle = data_buf[16];
           // A左 B右 提供Y轴前进力(正方向向前) + Yaw轴偏航差动(力臂100mm)
-          // C前 D后 提供Z轴升降力(正方向向下)
+          // C后 D前 提供Z轴升降力(正方向向下)
           // X轴预留，不参与分配
           // yaw_thrust为扭矩(N·m)，除以力臂0.1m换算为单侧差动力(N)
           float yaw_force = yaw_thrust / 0.1f;
-          float motorAF = y_thrust / 2.0f - yaw_force;
-          float motorBF = y_thrust / 2.0f + yaw_force;
+          float motorAF = y_thrust / 2.0f + yaw_force;
+          float motorBF = y_thrust / 2.0f - yaw_force;
           float motorCF = z_thrust / 2.0f;
           float motorDF = z_thrust / 2.0f;
           A_pwm = 8 * PWM_FromThrust(motorAF);
