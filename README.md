@@ -179,7 +179,7 @@ git clone <仓库地址> Test4_A
 ```
 
 > 如果已经 clone 到了其他名称的文件夹（如 `ControlTest4_A`），CubeMX 打开 `.ioc` 时会报错。解决方法：
-> - 将文件夹重命名为 `Test4_A`，或在 CubeMX 中 **File → Save Project As** 另存为新项目名。
+> - 将文件夹重命名为 `Test4_A`。
 
 ### 1. 环境准备
 
