@@ -170,17 +170,6 @@ Test4_A/
 
 ## 快速开始
 
-### 0. 克隆仓库（重要）
-
-> ⚠️ **CubeMX 要求文件夹名必须与项目名一致**。本项目的 CubeMX 工程名为 `Test4_A`，请务必按以下方式克隆：
-
-```bash
-git clone <仓库地址> Test4_A
-```
-
-> 如果已经 clone 到了其他名称的文件夹（如 `ControlTest4_A`），CubeMX 打开 `.ioc` 时会报错。解决方法：
-> - 将文件夹重命名为 `Test4_A`。
-
 ### 1. 环境准备
 
 - Keil MDK-ARM 5.x
